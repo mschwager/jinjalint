@@ -309,6 +309,151 @@ def check_indentation(file, config):
     return issues
 
 
+class CheckNode:
+    def __init__(self, value):
+        self.value = value
+        self.children = []
+
+    def __str__(self, level=0):
+        name = getattr(self.value, "name", None)
+
+        attributes = []
+        if getattr(self.value, "opening_tag", None):
+            attributes = [
+                (str(n.name), str(n.value).strip("\"'"))
+                for n in self.value.opening_tag.attributes.nodes
+            ]
+
+        result = (
+            "  " * level
+            + "{}: name={!r} attributes={!r}".format(type(self.value), name, attributes)
+            + "\n"
+        )
+
+        for child in self.children:
+            result += child.__str__(level + 1)
+
+        return result
+
+
+def print_tree(node):
+    root = CheckNode(None)
+    build_tree(root, node)
+    print(root)
+
+
+def build_tree(root, node):
+    if isinstance(node, str) or node is None:
+        return
+
+    for child in node.nodes:
+        new_node = CheckNode(child)
+        if getattr(child, "content", None):
+            build_tree(new_node, child.content)
+        root.children.append(new_node)
+
+
+def form_csrf_protection(node):
+    attributes = []
+    if getattr(node.value, "opening_tag", None):
+        attributes = [
+            (str(n.name), str(n.value).strip("\"'"))
+            for n in node.value.opening_tag.attributes.nodes
+        ]
+    is_csrf_jinja_variable = (
+        isinstance(node.value, ast.JinjaVariable)
+        and node.value.content.lower() == "form.csrf_token"
+    )
+    is_csrf_input = (
+        isinstance(node.value, ast.Element)
+        and ("name", "csrf_token") in attributes
+        and ("value", "{{ csrf_token() }}") in attributes
+    )
+
+    if is_csrf_jinja_variable or is_csrf_input:
+        return True
+
+    if not node.children:
+        return False
+
+    return any(form_csrf_protection(child) for child in node.children)
+
+
+def check_csrf_protection_helper(node, file):
+    name = getattr(node.value, "name", None)
+    is_form = (
+        isinstance(node.value, ast.Element)
+        and name and name.lower() == "form"
+    )
+
+    if is_form:
+        form_has_csrf_protection = form_csrf_protection(node)
+        if not form_has_csrf_protection:
+            issue_location = IssueLocation(
+                file_path=file.path,
+                line=node.value.begin.line,
+                column=node.value.begin.column
+            )
+            return [Issue(issue_location, "Form missing CSRF protection")]
+        return []
+
+    if not node.children:
+        return []
+
+    return sum((check_csrf_protection_helper(child, file) for child in node.children), [])
+
+
+def check_csrf_protection(file, config):
+    root = CheckNode(None)
+    build_tree(root, file.tree)
+    return check_csrf_protection_helper(root, file)
+
+
+def check_anchor_target_blank_helper(node, file):
+    name = getattr(node.value, "name", None)
+    is_anchor = (
+        isinstance(node.value, ast.Element)
+        and name and name.lower() == "a"
+    )
+    attributes = []
+    if getattr(node.value, "opening_tag", None):
+        attributes = [
+            (str(n.name), str(n.value).strip("\"'"))
+            for n in node.value.opening_tag.attributes.nodes
+        ]
+    is_insecure_anchor = (
+        is_anchor
+        and ("target", "_blank") in attributes
+        and not any(
+            k == "rel"
+            and "noopener" in v
+            and "noreferrer" in v
+            for k, v in attributes
+        )
+    )
+
+    if is_insecure_anchor:
+        issue_location = IssueLocation(
+            file_path=file.path,
+            line=node.value.begin.line,
+            column=node.value.begin.column
+        )
+        return [Issue(
+            issue_location,
+            "Anchor with 'target=_blank' missing 'noopener' and/or 'noreferrer'"
+        )]
+
+    if not node.children:
+        return []
+
+    return sum((check_anchor_target_blank_helper(child, file) for child in node.children), [])
+
+def check_anchor_target_blank(file, config):
+    root = CheckNode(None)
+    build_tree(root, file.tree)
+    return check_anchor_target_blank_helper(root, file)
+
+
 def check_space_only_indent(file, _config):
     issues = []
     for i, line in enumerate(file.lines):
@@ -327,6 +472,8 @@ def check_space_only_indent(file, _config):
 checks = [
     check_space_only_indent,
     check_indentation,
+    check_csrf_protection,
+    check_anchor_target_blank,
 ]
 
 
