@@ -38,15 +38,7 @@ def resolve_file_paths(input_names, extensions):
     return flatten(path_lists)
 
 
-def parse_file(path_and_config):
-    """
-    Returns a tuple ([Issue], File | None).
-    """
-    path, config = path_and_config
-
-    with path.open('r') as f:
-        source = f.read()
-
+def get_file(source, config, path):
     parser = make_parser(config)
 
     try:
@@ -61,6 +53,27 @@ def parse_file(path_and_config):
         location = get_parsy_error_location(error, path)
         issue = Issue(location, 'Parse error: ' + str(error))
         return [issue], None
+
+
+def parse_file(path_and_config):
+    """
+    Returns a tuple ([Issue], File | None).
+    """
+    path, config = path_and_config
+
+    with path.open('r') as f:
+        source = f.read()
+
+    return get_file(source, config, path)
+
+
+def parse_source(source_and_config):
+    """
+    Returns a tuple ([Issue], File | None).
+    """
+    source, config = source_and_config
+
+    return get_file(source, config, None)
 
 
 def lint(paths, config):

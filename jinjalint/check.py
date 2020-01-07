@@ -379,7 +379,10 @@ def form_csrf_protection(node):
     return any(form_csrf_protection(child) for child in node.children)
 
 
-def check_csrf_protection_helper(node, file):
+CSRF_ISSUE_MESSAGE = "Form missing CSRF protection"
+
+
+def _check_csrf_protection_helper(node, file):
     name = getattr(node.value, "name", None)
     is_form = (
         isinstance(node.value, ast.Element)
@@ -394,22 +397,24 @@ def check_csrf_protection_helper(node, file):
                 line=node.value.begin.line,
                 column=node.value.begin.column
             )
-            return [Issue(issue_location, "Form missing CSRF protection")]
+            return [Issue(issue_location, CSRF_ISSUE_MESSAGE)]
         return []
 
     if not node.children:
         return []
 
-    return sum((check_csrf_protection_helper(child, file) for child in node.children), [])
+    return sum((_check_csrf_protection_helper(child, file) for child in node.children), [])
 
 
 def check_csrf_protection(file, config):
     root = CheckNode(None)
     build_tree(root, file.tree)
-    return check_csrf_protection_helper(root, file)
+    return _check_csrf_protection_helper(root, file)
 
 
-def check_anchor_target_blank_helper(node, file):
+ANCHOR_ISSUE_MESSAGE = "Anchor with 'target=_blank' missing 'noopener' and/or 'noreferrer'"
+
+def _check_anchor_target_blank_helper(node, file):
     name = getattr(node.value, "name", None)
     is_anchor = (
         isinstance(node.value, ast.Element)
@@ -438,20 +443,17 @@ def check_anchor_target_blank_helper(node, file):
             line=node.value.begin.line,
             column=node.value.begin.column
         )
-        return [Issue(
-            issue_location,
-            "Anchor with 'target=_blank' missing 'noopener' and/or 'noreferrer'"
-        )]
+        return [Issue(issue_location, ANCHOR_ISSUE_MESSAGE)]
 
     if not node.children:
         return []
 
-    return sum((check_anchor_target_blank_helper(child, file) for child in node.children), [])
+    return sum((_check_anchor_target_blank_helper(child, file) for child in node.children), [])
 
 def check_anchor_target_blank(file, config):
     root = CheckNode(None)
     build_tree(root, file.tree)
-    return check_anchor_target_blank_helper(root, file)
+    return _check_anchor_target_blank_helper(root, file)
 
 
 def check_space_only_indent(file, _config):
