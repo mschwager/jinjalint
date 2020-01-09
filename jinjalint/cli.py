@@ -1,8 +1,8 @@
 """jinjalint
 
 Usage:
-  jinjalint [-v | --verbose] [-p | --print] [--config CONFIG] [--parse-only]
-            [--extension EXT | -e EXT]... [INPUT ...]
+  jinjalint [-v | --verbose] [-p | --print] [-j | --json] [--config CONFIG]
+            [--parse-only] [--exit-zero] [--extension EXT | -e EXT]... [INPUT ...]
   jinjalint (-h | --help)
   jinjalint --version
 
@@ -11,14 +11,19 @@ Options:
   --version             Show version information and exit.
   -v --verbose          Verbose mode.
   -p --print            Print input files in tree format.
+  -j --json             Output results in JSON format.
   -c --config CONFIG    Specify the configuration file.
   --parse-only          Don’t lint, check for syntax errors and exit.
+  --exit-zero           Exit "0" even if there are issues.
   -e --extension EXT    Extension of the files to analyze (used if INPUT
                         contains directories to crawl).
                         [default: html jinja twig]
 
 The configuration file must be a valid Python file.
 """
+import json
+import sys
+
 from docopt import docopt
 
 from .lint import lint, resolve_file_paths
@@ -70,10 +75,24 @@ def main():
         print()
 
     issues = lint(paths, config)
-    print_issues(issues, config)
+
+    if arguments['--json']:
+        result = [
+            {
+                'message': issue.message,
+                'file_path': str(issue.location.file_path),
+                'line': issue.location.line,
+                'column': issue.location.column,
+            }
+            for issue in issues
+        ]
+        json.dump(result, sys.stdout)
+    else:
+        print_issues(issues, config)
 
     if any(issues):
-        exit(1)
+        code = 0 if arguments['--exit-zero'] else 1
+        sys.exit(code)
 
 
 if __name__ == '__main__':
