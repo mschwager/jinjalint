@@ -3,7 +3,7 @@ import parsy
 
 from .parse import make_parser
 from .util import flatten
-from .check import check_files
+from .check import check_files, print_tree
 from .issue import Issue, IssueLocation
 from .file import File
 
@@ -90,6 +90,11 @@ def lint(paths, config):
         issues += parse_issues
         if file is not None:
             files.append(file)
+
+    if config.get('print', False):
+        for file in files:
+            print_tree(file.tree)
+        return []
 
     if not config.get('parse_only', False):
         issues += check_files(files, config)

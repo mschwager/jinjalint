@@ -1,4 +1,5 @@
 import re
+import operator
 
 from . import ast
 from .util import flatten
@@ -272,6 +273,9 @@ def check_indentation(file, config):
             next_child = get_first_child_node(parent_node[i + 1:])
 
             if isinstance(child, str):
+                if i == 0 and '<!DOCTYPE' in child:
+                    continue
+
                 check_content_str(expected_level, child, parent_node)
                 if not child.strip(' '):
                     inline = True
@@ -414,6 +418,7 @@ def check_csrf_protection(file, config):
 
 ANCHOR_ISSUE_MESSAGE = "Anchor with 'target=_blank' missing 'noopener' and/or 'noreferrer'"
 
+
 def _check_anchor_target_blank_helper(node, file):
     name = getattr(node.value, "name", None)
     is_anchor = (
@@ -450,10 +455,125 @@ def _check_anchor_target_blank_helper(node, file):
 
     return sum((_check_anchor_target_blank_helper(child, file) for child in node.children), [])
 
+
 def check_anchor_target_blank(file, config):
     root = CheckNode(None)
     build_tree(root, file.tree)
     return _check_anchor_target_blank_helper(root, file)
+
+
+DOCTYPE_ISSUE_MESSAGE = "Include HTML doctype like '<!DOCTYPE html>' to avoid interpretation conflict (XSS)"
+
+
+def check_html_doctype(file, config):
+    src = file.source.lower()
+
+    if r"<html" in src and r"</html" in src and r"<!doctype" not in src:
+        # See https://html5sec.org/ for why quirks mode can be bad
+        issue_location = IssueLocation(
+            file_path=file.path,
+            line=1,
+            column=0
+        )
+        return [Issue(issue_location, DOCTYPE_ISSUE_MESSAGE)]
+
+    return []
+
+
+CHARSET_ISSUE_MESSAGE = "Include HTML charset like '<meta charset=\"UTF-8\">' to avoid interpretation conflict (XSS)"
+
+
+def _check_html_charset_helper(node, file):
+    name = getattr(node.value, "name", None)
+    is_meta = (
+        isinstance(node.value, ast.Element)
+        and name and name.lower() == "meta"
+    )
+    attributes = []
+    if getattr(node.value, "opening_tag", None):
+        attributes = [
+            (str(n.name), str(n.value).strip("\"'"))
+            for n in node.value.opening_tag.attributes.nodes
+        ]
+    is_meta_charset = (
+        is_meta
+        and "charset" in operator.itemgetter(0)(attributes)
+    )
+
+    if is_meta_charset:
+        return True
+
+    if not node.children:
+        return False
+
+    return any(_check_html_charset_helper(child, file) for child in node.children)
+
+
+def check_html_charset(file, config):
+    root = CheckNode(None)
+    build_tree(root, file.tree)
+    src = file.source.lower()
+
+    if r"<html" in src and r"</html" in src and not _check_html_charset_helper(root, file):
+        # See the following for why missing charset can be bad
+        #   * https://html5sec.org/
+        #   * https://portswigger.net/kb/issues/00800200_html-does-not-specify-charset
+        issue_location = IssueLocation(
+            file_path=file.path,
+            line=1,
+            column=0
+        )
+        return [Issue(issue_location, CHARSET_ISSUE_MESSAGE)]
+
+    return []
+
+
+CONTENT_TYPE_ISSUE_MESSAGE = "Include HTML content-type like '<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">' to avoid interpretation conflict (XSS)"
+
+
+def _check_html_content_type_helper(node, file):
+    name = getattr(node.value, "name", None)
+    is_meta = (
+        isinstance(node.value, ast.Element)
+        and name and name.lower() == "meta"
+    )
+    attributes = []
+    if getattr(node.value, "opening_tag", None):
+        attributes = [
+            (str(n.name), str(n.value).strip("\"'"))
+            for n in node.value.opening_tag.attributes.nodes
+        ]
+    is_meta_content_type = (
+        is_meta
+        and ("http-equiv", "Content-Type") in attributes
+    )
+
+    if is_meta_content_type:
+        return True
+
+    if not node.children:
+        return False
+
+    return any(_check_html_content_type_helper(child, file) for child in node.children)
+
+
+def check_html_content_type(file, config):
+    root = CheckNode(None)
+    build_tree(root, file.tree)
+    src = file.source.lower()
+
+    if r"<html" in src and r"</html" in src and not _check_html_content_type_helper(root, file):
+        # See the following for why missing content type can be bad
+        #   * https://html5sec.org/
+        #   * https://portswigger.net/kb/issues/00800500_content-type-is-not-specified
+        issue_location = IssueLocation(
+            file_path=file.path,
+            line=1,
+            column=0
+        )
+        return [Issue(issue_location, CONTENT_TYPE_ISSUE_MESSAGE)]
+
+    return []
 
 
 def check_space_only_indent(file, _config):
@@ -476,6 +596,9 @@ checks = [
     check_indentation,
     check_csrf_protection,
     check_anchor_target_blank,
+    check_html_doctype,
+    check_html_charset,
+    check_html_content_type,
 ]
 
 

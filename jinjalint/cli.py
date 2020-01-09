@@ -1,7 +1,7 @@
 """jinjalint
 
 Usage:
-  jinjalint [-v | --verbose] [--config CONFIG] [--parse-only]
+  jinjalint [-v | --verbose] [-p | --print] [--config CONFIG] [--parse-only]
             [--extension EXT | -e EXT]... [INPUT ...]
   jinjalint (-h | --help)
   jinjalint --version
@@ -10,6 +10,7 @@ Options:
   -h --help             Show this help message and exit.
   --version             Show version information and exit.
   -v --verbose          Verbose mode.
+  -p --print            Print input files in tree format.
   -c --config CONFIG    Specify the configuration file.
   --parse-only          Don’t lint, check for syntax errors and exit.
   -e --extension EXT    Extension of the files to analyze (used if INPUT
@@ -59,6 +60,7 @@ def main():
 
     config['verbose'] = verbose
     config['parse_only'] = arguments['--parse-only']
+    config['print'] = arguments['--print']
 
     paths = list(resolve_file_paths(input_names, extensions=extensions))
 
