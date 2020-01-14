@@ -442,6 +442,11 @@ def _check_anchor_target_blank_helper(node, file):
             and "noreferrer" in v
             for k, v in attributes
         )
+        and not any(
+            k == "href"
+            and "url_for(" in v
+            for k, v in attributes
+        )
     )
 
     if is_insecure_anchor:
@@ -481,7 +486,7 @@ def _check_anchor_href_template_helper(node, file):
         ]
 
     anchor_href_template = is_anchor and any(
-        "{{" in attr[1] and "}}" in attr[1]
+        "{{" in attr[1] and "}}" in attr[1] and 'url_for(' not in attr[1]
         for attr in attributes
     )
 
