@@ -9,6 +9,34 @@ from .issue import Issue, IssueLocation
 WHITESPACE_INDENT_RE = re.compile(r'^\s*')
 INDENT_RE = re.compile('^ *')
 
+SPACE_ONLY_INDENT_ISSUE_MESSAGE = "Should be indented with spaces"
+SPACE_ONLY_INDENT_ISSUE_CODE = "JJL101"
+
+# There's no INDENTATION_ISSUE_MESSAGE here because
+# the check uses many different messages
+INDENTATION_ISSUE_CODE = "JJL102"
+
+CSRF_ISSUE_MESSAGE = "Form missing CSRF protection"
+CSRF_ISSUE_CODE = "JJL103"
+
+ANCHOR_ISSUE_MESSAGE = "Anchor with 'target=_blank' missing 'noopener' and/or 'noreferrer'"
+ANCHOR_ISSUE_CODE = "JJL104"
+
+ANCHOR_HREF_TEMPLATE_ISSUE_MESSAGE = "Anchor href with Jinja template - XSS possible by 'javascript:' URI"
+ANCHOR_HREF_TEMPLATE_ISSUE_CODE = "JJL105"
+
+DOCTYPE_ISSUE_MESSAGE = "Include HTML doctype like '<!DOCTYPE html>' to avoid interpretation conflict (XSS)"
+DOCTYPE_ISSUE_CODE = "JJL106"
+
+CHARSET_ISSUE_MESSAGE = "Include HTML charset like '<meta charset=\"UTF-8\">' to avoid interpretation conflict (XSS)"
+CHARSET_ISSUE_CODE = "JJL107"
+
+CONTENT_TYPE_ISSUE_MESSAGE = "Include HTML content-type like '<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">' to avoid interpretation conflict (XSS)"
+CONTENT_TYPE_ISSUE_CODE = "JJL108"
+
+UNQUOTED_ATTRIBUTE_ISSUE_MESSAGE = "HTML element with unquoted attribute - XSS possible by attribute injection"
+UNQUOTED_ATTRIBUTE_ISSUE_CODE = "JJL109"
+
 
 def get_line_beginning(source, node):
     source = source[:node.begin.index]
@@ -46,7 +74,7 @@ def check_indentation(file, config):
     issues = []
 
     def add_issue(location, msg):
-        issues.append(Issue.from_ast(file, location, msg, 'JJL102'))
+        issues.append(Issue.from_ast(file, location, msg, INDENTATION_ISSUE_CODE))
 
     def check_indent(expected_level, node, inline=False,
                      allow_same_line=False):
@@ -383,9 +411,6 @@ def form_csrf_protection(node):
     return any(form_csrf_protection(child) for child in node.children)
 
 
-CSRF_ISSUE_MESSAGE = "Form missing CSRF protection"
-
-
 def _check_csrf_protection_helper(node, file):
     name = getattr(node.value, "name", None)
     is_form = (
@@ -401,7 +426,7 @@ def _check_csrf_protection_helper(node, file):
                 line=node.value.begin.line,
                 column=node.value.begin.column
             )
-            return [Issue(issue_location, CSRF_ISSUE_MESSAGE, 'JJL103')]
+            return [Issue(issue_location, CSRF_ISSUE_MESSAGE, CSRF_ISSUE_CODE)]
         return []
 
     if not node.children:
@@ -416,9 +441,6 @@ def check_csrf_protection(file, config):
 
     # https://flask-wtf.readthedocs.io/en/stable/csrf.html
     return _check_csrf_protection_helper(root, file)
-
-
-ANCHOR_ISSUE_MESSAGE = "Anchor with 'target=_blank' missing 'noopener' and/or 'noreferrer'"
 
 
 def _check_anchor_target_blank_helper(node, file):
@@ -455,7 +477,7 @@ def _check_anchor_target_blank_helper(node, file):
             line=node.value.begin.line,
             column=node.value.begin.column
         )
-        return [Issue(issue_location, ANCHOR_ISSUE_MESSAGE, 'JJL104')]
+        return [Issue(issue_location, ANCHOR_ISSUE_MESSAGE, ANCHOR_ISSUE_CODE)]
 
     if not node.children:
         return []
@@ -467,9 +489,6 @@ def check_anchor_target_blank(file, config):
     root = CheckNode(None)
     build_tree(root, file.tree)
     return _check_anchor_target_blank_helper(root, file)
-
-
-ANCHOR_HREF_TEMPLATE_ISSUE_MESSAGE = "Anchor href with Jinja template - XSS possible by 'javascript:' URI"
 
 
 def _check_anchor_href_template_helper(node, file):
@@ -497,7 +516,7 @@ def _check_anchor_href_template_helper(node, file):
             line=node.value.begin.line,
             column=node.value.begin.column
         )
-        issues = [Issue(issue_location, ANCHOR_HREF_TEMPLATE_ISSUE_MESSAGE, 'JJL105')]
+        issues = [Issue(issue_location, ANCHOR_HREF_TEMPLATE_ISSUE_MESSAGE, ANCHOR_HREF_TEMPLATE_ISSUE_CODE)]
 
     return issues + sum(
         (_check_anchor_href_template_helper(child, file) for child in node.children),
@@ -513,9 +532,6 @@ def check_anchor_href_template(file, config):
     return _check_anchor_href_template_helper(root, file)
 
 
-DOCTYPE_ISSUE_MESSAGE = "Include HTML doctype like '<!DOCTYPE html>' to avoid interpretation conflict (XSS)"
-
-
 def check_html_doctype(file, config):
     src = file.source.lower()
 
@@ -526,12 +542,9 @@ def check_html_doctype(file, config):
             line=1,
             column=0
         )
-        return [Issue(issue_location, DOCTYPE_ISSUE_MESSAGE, 'JJL106')]
+        return [Issue(issue_location, DOCTYPE_ISSUE_MESSAGE, DOCTYPE_ISSUE_CODE)]
 
     return []
-
-
-CHARSET_ISSUE_MESSAGE = "Include HTML charset like '<meta charset=\"UTF-8\">' to avoid interpretation conflict (XSS)"
 
 
 def _check_html_charset_helper(node, file):
@@ -574,12 +587,9 @@ def check_html_charset(file, config):
             line=1,
             column=0
         )
-        return [Issue(issue_location, CHARSET_ISSUE_MESSAGE, 'JJL107')]
+        return [Issue(issue_location, CHARSET_ISSUE_MESSAGE, CHARSET_ISSUE_CODE)]
 
     return []
-
-
-CONTENT_TYPE_ISSUE_MESSAGE = "Include HTML content-type like '<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">' to avoid interpretation conflict (XSS)"
 
 
 def _check_html_content_type_helper(node, file):
@@ -622,12 +632,9 @@ def check_html_content_type(file, config):
             line=1,
             column=0
         )
-        return [Issue(issue_location, CONTENT_TYPE_ISSUE_MESSAGE, 'JJL108')]
+        return [Issue(issue_location, CONTENT_TYPE_ISSUE_MESSAGE, CONTENT_TYPE_ISSUE_CODE)]
 
     return []
-
-
-UNQUOTED_ATTRIBUTE_ISSUE_MESSAGE = "HTML element with unquoted attribute - XSS possible by attribute injection"
 
 
 def _check_unquoted_attributes_helper(node, file):
@@ -655,7 +662,7 @@ def _check_unquoted_attributes_helper(node, file):
             line=node.value.begin.line,
             column=node.value.begin.column
         )
-        issues = [Issue(issue_location, UNQUOTED_ATTRIBUTE_ISSUE_MESSAGE, 'JJL109')]
+        issues = [Issue(issue_location, UNQUOTED_ATTRIBUTE_ISSUE_MESSAGE, UNQUOTED_ATTRIBUTE_ISSUE_CODE)]
 
     return issues + sum(
         (_check_unquoted_attributes_helper(child, file) for child in node.children),
@@ -681,21 +688,21 @@ def check_space_only_indent(file, _config):
                 line=i,
                 column=0,
             )
-            issue = Issue(loc, 'Should be indented with spaces', 'JJL101')
+            issue = Issue(loc, SPACE_ONLY_INDENT_ISSUE_MESSAGE, SPACE_ONLY_INDENT_ISSUE_CODE)
             issues.append(issue)
     return issues
 
 
 checks = {
-    "JJL101": check_space_only_indent,
-    "JJL102": check_indentation,
-    "JJL103": check_csrf_protection,
-    "JJL104": check_anchor_target_blank,
-    "JJL105": check_anchor_href_template,
-    "JJL106": check_html_doctype,
-    "JJL107": check_html_charset,
-    "JJL108": check_html_content_type,
-    "JJL109": check_unquoted_attributes,
+    SPACE_ONLY_INDENT_ISSUE_CODE: check_space_only_indent,
+    INDENTATION_ISSUE_CODE: check_indentation,
+    CSRF_ISSUE_CODE: check_csrf_protection,
+    ANCHOR_ISSUE_CODE: check_anchor_target_blank,
+    ANCHOR_HREF_TEMPLATE_ISSUE_CODE: check_anchor_href_template,
+    DOCTYPE_ISSUE_CODE: check_html_doctype,
+    CHARSET_ISSUE_CODE: check_html_charset,
+    CONTENT_TYPE_ISSUE_CODE: check_html_content_type,
+    UNQUOTED_ATTRIBUTE_ISSUE_CODE: check_unquoted_attributes,
 }
 
 
