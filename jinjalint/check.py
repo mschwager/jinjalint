@@ -651,6 +651,7 @@ def _check_unquoted_attributes_helper(node, file):
             and '{{' in attr
             and '}}' in attr
             and (attr[0] not in '\'"' or attr[len(attr) - 1] not in '\'"')
+            and ('url_for(' not in attr)
         )
 
     unquoted_attribute = any(unquoted_attr(attr[1]) for attr in attributes)
