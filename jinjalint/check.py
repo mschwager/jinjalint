@@ -413,6 +413,8 @@ def _check_csrf_protection_helper(node, file):
 def check_csrf_protection(file, config):
     root = CheckNode(None)
     build_tree(root, file.tree)
+
+    # https://flask-wtf.readthedocs.io/en/stable/csrf.html
     return _check_csrf_protection_helper(root, file)
 
 
@@ -460,6 +462,50 @@ def check_anchor_target_blank(file, config):
     root = CheckNode(None)
     build_tree(root, file.tree)
     return _check_anchor_target_blank_helper(root, file)
+
+
+ANCHOR_HREF_TEMPLATE_ISSUE_MESSAGE = "Anchor href with Jinja template - XSS possible by 'javascript:' URI"
+
+
+def _check_anchor_href_template_helper(node, file):
+    name = getattr(node.value, "name", None)
+    is_anchor = (
+        isinstance(node.value, ast.Element)
+        and name and name.lower() == "a"
+    )
+    attributes = []
+    if getattr(node.value, "opening_tag", None):
+        attributes = [
+            (str(n.name), str(n.value))
+            for n in node.value.opening_tag.attributes.nodes
+        ]
+
+    anchor_href_template = is_anchor and any(
+        "{{" in attr[1] and "}}" in attr[1]
+        for attr in attributes
+    )
+
+    issues = []
+    if anchor_href_template:
+        issue_location = IssueLocation(
+            file_path=file.path,
+            line=node.value.begin.line,
+            column=node.value.begin.column
+        )
+        issues = [Issue(issue_location, ANCHOR_HREF_TEMPLATE_ISSUE_MESSAGE)]
+
+    return issues + sum(
+        (_check_anchor_href_template_helper(child, file) for child in node.children),
+        []
+    )
+
+
+def check_anchor_href_template(file, config):
+    root = CheckNode(None)
+    build_tree(root, file.tree)
+
+    # https://flask.palletsprojects.com/en/1.1.x/security/#cross-site-scripting-xss
+    return _check_anchor_href_template_helper(root, file)
 
 
 DOCTYPE_ISSUE_MESSAGE = "Include HTML doctype like '<!DOCTYPE html>' to avoid interpretation conflict (XSS)"
@@ -576,6 +622,50 @@ def check_html_content_type(file, config):
     return []
 
 
+UNQUOTED_ATTRIBUTE_ISSUE_MESSAGE = "HTML element with unquoted attribute - XSS possible by attribute injection"
+
+
+def _check_unquoted_attributes_helper(node, file):
+    attributes = []
+    if getattr(node.value, "opening_tag", None):
+        attributes = [
+            (str(n.name), str(n.value))
+            for n in node.value.opening_tag.attributes.nodes
+        ]
+
+    def unquoted_attr(attr):
+        return (
+            attr
+            and '{{' in attr
+            and '}}' in attr
+            and (attr[0] not in '\'"' or attr[len(attr) - 1] not in '\'"')
+        )
+
+    unquoted_attribute = any(unquoted_attr(attr[1]) for attr in attributes)
+
+    issues = []
+    if unquoted_attribute:
+        issue_location = IssueLocation(
+            file_path=file.path,
+            line=node.value.begin.line,
+            column=node.value.begin.column
+        )
+        issues = [Issue(issue_location, UNQUOTED_ATTRIBUTE_ISSUE_MESSAGE)]
+
+    return issues + sum(
+        (_check_unquoted_attributes_helper(child, file) for child in node.children),
+        []
+    )
+
+
+def check_unquoted_attributes(file, config):
+    root = CheckNode(None)
+    build_tree(root, file.tree)
+
+    # https://flask.palletsprojects.com/en/1.1.x/security/#cross-site-scripting-xss
+    return _check_unquoted_attributes_helper(root, file)
+
+
 def check_space_only_indent(file, _config):
     issues = []
     for i, line in enumerate(file.lines):
@@ -596,9 +686,11 @@ checks = [
     check_indentation,
     check_csrf_protection,
     check_anchor_target_blank,
+    check_anchor_href_template,
     check_html_doctype,
     check_html_charset,
     check_html_content_type,
+    check_unquoted_attributes,
 ]
 
 
