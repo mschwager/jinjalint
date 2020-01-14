@@ -46,7 +46,7 @@ def check_indentation(file, config):
     issues = []
 
     def add_issue(location, msg):
-        issues.append(Issue.from_ast(file, location, msg))
+        issues.append(Issue.from_ast(file, location, msg, 'JJL102'))
 
     def check_indent(expected_level, node, inline=False,
                      allow_same_line=False):
@@ -401,7 +401,7 @@ def _check_csrf_protection_helper(node, file):
                 line=node.value.begin.line,
                 column=node.value.begin.column
             )
-            return [Issue(issue_location, CSRF_ISSUE_MESSAGE)]
+            return [Issue(issue_location, CSRF_ISSUE_MESSAGE, 'JJL103')]
         return []
 
     if not node.children:
@@ -450,7 +450,7 @@ def _check_anchor_target_blank_helper(node, file):
             line=node.value.begin.line,
             column=node.value.begin.column
         )
-        return [Issue(issue_location, ANCHOR_ISSUE_MESSAGE)]
+        return [Issue(issue_location, ANCHOR_ISSUE_MESSAGE, 'JJL104')]
 
     if not node.children:
         return []
@@ -492,7 +492,7 @@ def _check_anchor_href_template_helper(node, file):
             line=node.value.begin.line,
             column=node.value.begin.column
         )
-        issues = [Issue(issue_location, ANCHOR_HREF_TEMPLATE_ISSUE_MESSAGE)]
+        issues = [Issue(issue_location, ANCHOR_HREF_TEMPLATE_ISSUE_MESSAGE, 'JJL105')]
 
     return issues + sum(
         (_check_anchor_href_template_helper(child, file) for child in node.children),
@@ -521,7 +521,7 @@ def check_html_doctype(file, config):
             line=1,
             column=0
         )
-        return [Issue(issue_location, DOCTYPE_ISSUE_MESSAGE)]
+        return [Issue(issue_location, DOCTYPE_ISSUE_MESSAGE, 'JJL106')]
 
     return []
 
@@ -569,7 +569,7 @@ def check_html_charset(file, config):
             line=1,
             column=0
         )
-        return [Issue(issue_location, CHARSET_ISSUE_MESSAGE)]
+        return [Issue(issue_location, CHARSET_ISSUE_MESSAGE, 'JJL107')]
 
     return []
 
@@ -617,7 +617,7 @@ def check_html_content_type(file, config):
             line=1,
             column=0
         )
-        return [Issue(issue_location, CONTENT_TYPE_ISSUE_MESSAGE)]
+        return [Issue(issue_location, CONTENT_TYPE_ISSUE_MESSAGE, 'JJL108')]
 
     return []
 
@@ -650,7 +650,7 @@ def _check_unquoted_attributes_helper(node, file):
             line=node.value.begin.line,
             column=node.value.begin.column
         )
-        issues = [Issue(issue_location, UNQUOTED_ATTRIBUTE_ISSUE_MESSAGE)]
+        issues = [Issue(issue_location, UNQUOTED_ATTRIBUTE_ISSUE_MESSAGE, 'JJL109')]
 
     return issues + sum(
         (_check_unquoted_attributes_helper(child, file) for child in node.children),
@@ -676,26 +676,41 @@ def check_space_only_indent(file, _config):
                 line=i,
                 column=0,
             )
-            issue = Issue(loc, 'Should be indented with spaces')
+            issue = Issue(loc, 'Should be indented with spaces', 'JJL101')
             issues.append(issue)
     return issues
 
 
-checks = [
-    check_space_only_indent,
-    check_indentation,
-    check_csrf_protection,
-    check_anchor_target_blank,
-    check_anchor_href_template,
-    check_html_doctype,
-    check_html_charset,
-    check_html_content_type,
-    check_unquoted_attributes,
-]
+checks = {
+    "JJL101": check_space_only_indent,
+    "JJL102": check_indentation,
+    "JJL103": check_csrf_protection,
+    "JJL104": check_anchor_target_blank,
+    "JJL105": check_anchor_href_template,
+    "JJL106": check_html_doctype,
+    "JJL107": check_html_charset,
+    "JJL108": check_html_content_type,
+    "JJL109": check_unquoted_attributes,
+}
 
 
 def check_file(file, config):
-    return set(flatten(check(file, config) for check in checks))
+    if config.get('select'):
+        selected_checks = {
+            code: func
+            for code, func in checks.items()
+            if code in config['select']
+        }
+    elif config.get('exclude'):
+        selected_checks = {
+            code: func
+            for code, func in checks.items()
+            if code not in config['exclude']
+        }
+    else:
+        selected_checks = checks
+
+    return set(flatten(check(file, config) for check in selected_checks.values()))
 
 
 def check_files(files, config):

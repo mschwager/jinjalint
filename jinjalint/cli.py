@@ -2,7 +2,8 @@
 
 Usage:
   jinjalint [-v | --verbose] [-p | --print] [-j | --json] [--config CONFIG]
-            [--parse-only] [--exit-zero] [--extension EXT | -e EXT]... [INPUT ...]
+            [--parse-only] [--exit-zero] [--extension EXT | -e EXT]...
+            [--select CHK | -s CHK]... [--exclude CHK | -x CHK]... [INPUT ...]
   jinjalint (-h | --help)
   jinjalint --version
 
@@ -18,6 +19,8 @@ Options:
   -e --extension EXT    Extension of the files to analyze (used if INPUT
                         contains directories to crawl).
                         [default: html jinja twig]
+  -s --select CHK       List of checks to include when running.
+  -x --exclude CHK      List of checks to exclude when running.
 
 The configuration file must be a valid Python file.
 """
@@ -66,6 +69,8 @@ def main():
     config['verbose'] = verbose
     config['parse_only'] = arguments['--parse-only']
     config['print'] = arguments['--print']
+    config['select'] = arguments['--select']
+    config['exclude'] = arguments['--exclude']
 
     paths = list(resolve_file_paths(input_names, extensions=extensions))
 
@@ -80,6 +85,7 @@ def main():
         result = [
             {
                 'message': issue.message,
+                'code': issue.code,
                 'file_path': str(issue.location.file_path),
                 'line': issue.location.line,
                 'column': issue.location.column,

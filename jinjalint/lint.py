@@ -51,7 +51,7 @@ def get_file(source, config, path):
         return [], file
     except parsy.ParseError as error:
         location = get_parsy_error_location(error, path)
-        issue = Issue(location, 'Parse error: ' + str(error))
+        issue = Issue(location, 'Parse error: ' + str(error), 'JJL100')
         return [issue], None
 
 
