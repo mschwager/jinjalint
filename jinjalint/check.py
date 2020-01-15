@@ -10,32 +10,62 @@ WHITESPACE_INDENT_RE = re.compile(r'^\s*')
 INDENT_RE = re.compile('^ *')
 
 SPACE_ONLY_INDENT_ISSUE_MESSAGE = "Should be indented with spaces"
-SPACE_ONLY_INDENT_ISSUE_CODE = "JJL101"
+SPACE_ONLY_INDENT_ISSUE_CODE = "jinjalint-space-only-indent"
 
 # There's no INDENTATION_ISSUE_MESSAGE here because
 # the check uses many different messages
-INDENTATION_ISSUE_CODE = "JJL102"
+INDENTATION_ISSUE_CODE = "jinjalint-misaligned-indentation"
 
-FORM_MISSING_CSRF_ISSUE_MESSAGE = "HTML form missing CSRF protection"
-FORM_MISSING_CSRF_ISSUE_CODE = "JJL103"
+FORM_MISSING_CSRF_ISSUE_MESSAGE = (
+    "Flask apps using 'flask-wtf' require including a CSRF token in the HTML "
+    "form. This check detects missing CSRF protection in HTML forms in Jinja "
+    "templates."
+)
+FORM_MISSING_CSRF_ISSUE_CODE = "jinjalint-form-missing-csrf-protection"
 
-ANCHOR_TARGET_BLANK_ISSUE_MESSAGE = "HTML anchor with 'target=_blank' missing 'noopener' and/or 'noreferrer'"
-ANCHOR_TARGET_BLANK_ISSUE_CODE = "JJL104"
+ANCHOR_TARGET_BLANK_ISSUE_MESSAGE = (
+    "Pages opened with 'target=\"_blank\"' allow the new page to access the "
+    "original's 'window.opener'. This can have security, privacy, and "
+    "performance implications. Include 'rel=\"noopener noreferrer\"' to "
+    "prevent this."
+)
+ANCHOR_TARGET_BLANK_ISSUE_CODE = "jinjalint-anchor-missing-noopener-noreferrer"
 
-ANCHOR_HREF_TEMPLATE_ISSUE_MESSAGE = "HTML anchor href with Jinja template - XSS possible by 'javascript:' URI"
-ANCHOR_HREF_TEMPLATE_ISSUE_CODE = "JJL105"
+ANCHOR_HREF_TEMPLATE_ISSUE_MESSAGE = (
+    "Using a template variable in an 'href' attribute may allow XSS via "
+    "Javascript URIs, e.g. 'javascript:alert(123)'. Use 'url_for' to "
+    "generate links."
+)
+ANCHOR_HREF_TEMPLATE_ISSUE_CODE = "jinjalint-anchor-href-template-variable"
 
-DOCTYPE_ISSUE_MESSAGE = "Include HTML doctype like '<!DOCTYPE html>' to avoid interpretation conflict (XSS)"
-DOCTYPE_ISSUE_CODE = "JJL106"
+DOCTYPE_ISSUE_MESSAGE = (
+    "HTML missing a DOCTYPE declaration may result in content misinterpretation "
+    "in certain browsers, and thus XSS. Include a DOCTYPE like "
+    "'<!DOCTYPE html>' to avoid misinterpretation."
+)
+DOCTYPE_ISSUE_CODE = "jinjalint-missing-doctype"
 
-CHARSET_ISSUE_MESSAGE = "Include HTML charset like '<meta charset=\"UTF-8\">' to avoid interpretation conflict (XSS)"
-CHARSET_ISSUE_CODE = "JJL107"
+CHARSET_ISSUE_MESSAGE = (
+    "HTML missing a meta charset declaration may result in content misinterpretation "
+    "in certain browsers, and thus XSS. Include a meta charset like "
+    "'<meta charset=\"UTF-8\">' to avoid misinterpretation."
+)
+CHARSET_ISSUE_CODE = "jinjalint-missing-meta-charset"
 
-CONTENT_TYPE_ISSUE_MESSAGE = "Include HTML content-type like '<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">' to avoid interpretation conflict (XSS)"
-CONTENT_TYPE_ISSUE_CODE = "JJL108"
+CONTENT_TYPE_ISSUE_MESSAGE = (
+    "HTML missing a meta content-type declaration may result in content misinterpretation "
+    "in certain browsers, especially when using the 'file://' protocol, and thus XSS. "
+    "Include a meta content-type like "
+    "'<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">' to "
+    "avoid misinterpretation."
+)
+CONTENT_TYPE_ISSUE_CODE = "jinjalint-missing-meta-content-type"
 
-UNQUOTED_ATTRIBUTE_ISSUE_MESSAGE = "HTML element with unquoted attribute - XSS possible by attribute injection"
-UNQUOTED_ATTRIBUTE_ISSUE_CODE = "JJL109"
+UNQUOTED_ATTRIBUTE_ISSUE_MESSAGE = (
+    "Using a template variable as an HTML attribute without quotes may allow "
+    "XSS. Add quotes around the HTML attributes."
+)
+UNQUOTED_ATTRIBUTE_ISSUE_CODE = "jinjalint-unquoted-attribute-template-variable"
 
 
 def get_line_beginning(source, node):
