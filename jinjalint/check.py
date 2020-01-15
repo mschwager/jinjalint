@@ -16,13 +16,13 @@ SPACE_ONLY_INDENT_ISSUE_CODE = "JJL101"
 # the check uses many different messages
 INDENTATION_ISSUE_CODE = "JJL102"
 
-CSRF_ISSUE_MESSAGE = "Form missing CSRF protection"
-CSRF_ISSUE_CODE = "JJL103"
+FORM_MISSING_CSRF_ISSUE_MESSAGE = "HTML form missing CSRF protection"
+FORM_MISSING_CSRF_ISSUE_CODE = "JJL103"
 
-ANCHOR_ISSUE_MESSAGE = "Anchor with 'target=_blank' missing 'noopener' and/or 'noreferrer'"
-ANCHOR_ISSUE_CODE = "JJL104"
+ANCHOR_TARGET_BLANK_ISSUE_MESSAGE = "HTML anchor with 'target=_blank' missing 'noopener' and/or 'noreferrer'"
+ANCHOR_TARGET_BLANK_ISSUE_CODE = "JJL104"
 
-ANCHOR_HREF_TEMPLATE_ISSUE_MESSAGE = "Anchor href with Jinja template - XSS possible by 'javascript:' URI"
+ANCHOR_HREF_TEMPLATE_ISSUE_MESSAGE = "HTML anchor href with Jinja template - XSS possible by 'javascript:' URI"
 ANCHOR_HREF_TEMPLATE_ISSUE_CODE = "JJL105"
 
 DOCTYPE_ISSUE_MESSAGE = "Include HTML doctype like '<!DOCTYPE html>' to avoid interpretation conflict (XSS)"
@@ -426,7 +426,7 @@ def _check_csrf_protection_helper(node, file):
                 line=node.value.begin.line,
                 column=node.value.begin.column
             )
-            return [Issue(issue_location, CSRF_ISSUE_MESSAGE, CSRF_ISSUE_CODE)]
+            return [Issue(issue_location, FORM_MISSING_CSRF_ISSUE_MESSAGE, FORM_MISSING_CSRF_ISSUE_CODE)]
         return []
 
     if not node.children:
@@ -477,7 +477,7 @@ def _check_anchor_target_blank_helper(node, file):
             line=node.value.begin.line,
             column=node.value.begin.column
         )
-        return [Issue(issue_location, ANCHOR_ISSUE_MESSAGE, ANCHOR_ISSUE_CODE)]
+        return [Issue(issue_location, ANCHOR_TARGET_BLANK_ISSUE_MESSAGE, ANCHOR_TARGET_BLANK_ISSUE_CODE)]
 
     if not node.children:
         return []
@@ -697,8 +697,8 @@ def check_space_only_indent(file, _config):
 checks = {
     SPACE_ONLY_INDENT_ISSUE_CODE: check_space_only_indent,
     INDENTATION_ISSUE_CODE: check_indentation,
-    CSRF_ISSUE_CODE: check_csrf_protection,
-    ANCHOR_ISSUE_CODE: check_anchor_target_blank,
+    FORM_MISSING_CSRF_ISSUE_CODE: check_csrf_protection,
+    ANCHOR_TARGET_BLANK_ISSUE_CODE: check_anchor_target_blank,
     ANCHOR_HREF_TEMPLATE_ISSUE_CODE: check_anchor_href_template,
     DOCTYPE_ISSUE_CODE: check_html_doctype,
     CHARSET_ISSUE_CODE: check_html_charset,

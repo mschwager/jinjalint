@@ -31,8 +31,8 @@ def test_check_csrf_protection_missing_token():
                 line=3,
                 column=8
             ),
-            check.CSRF_ISSUE_MESSAGE,
-            check.CSRF_ISSUE_CODE
+            check.FORM_MISSING_CSRF_ISSUE_MESSAGE,
+            check.FORM_MISSING_CSRF_ISSUE_CODE
         )
     ]
 
@@ -93,8 +93,8 @@ def test_check_anchor_target_blank_missing_rel():
                 line=3,
                 column=8
             ),
-            check.ANCHOR_ISSUE_MESSAGE,
-            check.ANCHOR_ISSUE_CODE
+            check.ANCHOR_TARGET_BLANK_ISSUE_MESSAGE,
+            check.ANCHOR_TARGET_BLANK_ISSUE_CODE
         )
     ]
 
@@ -119,8 +119,8 @@ def test_check_anchor_target_blank_missing_noreferrer():
                 line=3,
                 column=8
             ),
-            check.ANCHOR_ISSUE_MESSAGE,
-            check.ANCHOR_ISSUE_CODE
+            check.ANCHOR_TARGET_BLANK_ISSUE_MESSAGE,
+            check.ANCHOR_TARGET_BLANK_ISSUE_CODE
         )
     ]
 
@@ -145,8 +145,8 @@ def test_check_anchor_target_blank_missing_noopener():
                 line=3,
                 column=8
             ),
-            check.ANCHOR_ISSUE_MESSAGE,
-            check.ANCHOR_ISSUE_CODE
+            check.ANCHOR_TARGET_BLANK_ISSUE_MESSAGE,
+            check.ANCHOR_TARGET_BLANK_ISSUE_CODE
         )
     ]
 
