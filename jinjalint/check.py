@@ -565,7 +565,7 @@ def check_anchor_href_template(file, config):
 def check_html_doctype(file, config):
     src = file.source.lower()
 
-    if r"<html" in src and r"</html" in src and r"<!doctype" not in src:
+    if r"<html" in src and r"<!doctype" not in src:
         # See https://html5sec.org/ for why quirks mode can be bad
         issue_location = IssueLocation(
             file_path=file.path,
@@ -608,7 +608,7 @@ def check_html_charset(file, config):
     build_tree(root, file.tree)
     src = file.source.lower()
 
-    if r"<html" in src and r"</html" in src and not _check_html_charset_helper(root, file):
+    if r"<html" in src and not _check_html_charset_helper(root, file):
         # See the following for why missing charset can be bad
         #   * https://html5sec.org/
         #   * https://portswigger.net/kb/issues/00800200_html-does-not-specify-charset
@@ -653,7 +653,7 @@ def check_html_content_type(file, config):
     build_tree(root, file.tree)
     src = file.source.lower()
 
-    if r"<html" in src and r"</html" in src and not _check_html_content_type_helper(root, file):
+    if r"<html" in src and not _check_html_content_type_helper(root, file):
         # See the following for why missing content type can be bad
         #   * https://html5sec.org/
         #   * https://portswigger.net/kb/issues/00800500_content-type-is-not-specified
