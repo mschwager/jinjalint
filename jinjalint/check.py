@@ -23,13 +23,19 @@ FORM_MISSING_CSRF_ISSUE_MESSAGE = (
 )
 FORM_MISSING_CSRF_ISSUE_CODE = "jinjalint-form-missing-csrf-protection"
 
-ANCHOR_TARGET_BLANK_ISSUE_MESSAGE = (
+ANCHOR_TARGET_BLANK_NOOPENER_ISSUE_MESSAGE = (
     "Pages opened with 'target=\"_blank\"' allow the new page to access the "
-    "original's 'window.opener'. This can have security, privacy, and "
-    "performance implications. Include 'rel=\"noopener noreferrer\"' to "
-    "prevent this."
+    "original's 'window.opener'. This can have security and performance "
+    "implications. Include 'rel=\"noopener\"' to prevent this."
 )
-ANCHOR_TARGET_BLANK_ISSUE_CODE = "jinjalint-anchor-missing-noopener-noreferrer"
+ANCHOR_TARGET_BLANK_NOOPENER_ISSUE_CODE = "jinjalint-anchor-missing-noopener"
+
+ANCHOR_TARGET_BLANK_NOREFERRER_ISSUE_MESSAGE = (
+    "Pages opened with 'target=\"_blank\"' allow the new page to access the "
+    "original's referrer. This can have privacy implications. Include "
+    "'rel=\"noreferrer\"' to prevent this."
+)
+ANCHOR_TARGET_BLANK_NOREFERRER_ISSUE_CODE = "jinjalint-anchor-missing-noreferrer"
 
 ANCHOR_HREF_TEMPLATE_ISSUE_MESSAGE = (
     "Using a template variable in an 'href' attribute may allow XSS via "
@@ -473,7 +479,7 @@ def check_csrf_protection(file, config):
     return _check_csrf_protection_helper(root, file)
 
 
-def _check_anchor_target_blank_helper(node, file):
+def _check_anchor_target_blank_helper(node, file, attribute_value):
     name = getattr(node.value, "name", None)
     is_anchor = (
         isinstance(node.value, ast.Element)
@@ -490,8 +496,7 @@ def _check_anchor_target_blank_helper(node, file):
         and ("target", "_blank") in attributes
         and not any(
             k == "rel"
-            and "noopener" in v
-            and "noreferrer" in v
+            and attribute_value in v
             for k, v in attributes
         )
         and not any(
@@ -507,18 +512,28 @@ def _check_anchor_target_blank_helper(node, file):
             line=node.value.begin.line,
             column=node.value.begin.column
         )
-        return [Issue(issue_location, ANCHOR_TARGET_BLANK_ISSUE_MESSAGE, ANCHOR_TARGET_BLANK_ISSUE_CODE)]
+        message, code = {
+            "noopener": (ANCHOR_TARGET_BLANK_NOOPENER_ISSUE_MESSAGE, ANCHOR_TARGET_BLANK_NOOPENER_ISSUE_CODE),
+            "noreferrer": (ANCHOR_TARGET_BLANK_NOREFERRER_ISSUE_MESSAGE, ANCHOR_TARGET_BLANK_NOREFERRER_ISSUE_CODE),
+        }[attribute_value]
+        return [Issue(issue_location, message, code)]
 
     if not node.children:
         return []
 
-    return sum((_check_anchor_target_blank_helper(child, file) for child in node.children), [])
+    return sum((_check_anchor_target_blank_helper(child, file, attribute_value) for child in node.children), [])
 
 
-def check_anchor_target_blank(file, config):
+def check_anchor_target_blank_noopener(file, config):
     root = CheckNode(None)
     build_tree(root, file.tree)
-    return _check_anchor_target_blank_helper(root, file)
+    return _check_anchor_target_blank_helper(root, file, "noopener")
+
+
+def check_anchor_target_blank_noreferrer(file, config):
+    root = CheckNode(None)
+    build_tree(root, file.tree)
+    return _check_anchor_target_blank_helper(root, file, "noreferrer")
 
 
 def _check_anchor_href_template_helper(node, file):
@@ -728,7 +743,8 @@ checks = {
     SPACE_ONLY_INDENT_ISSUE_CODE: check_space_only_indent,
     INDENTATION_ISSUE_CODE: check_indentation,
     FORM_MISSING_CSRF_ISSUE_CODE: check_csrf_protection,
-    ANCHOR_TARGET_BLANK_ISSUE_CODE: check_anchor_target_blank,
+    ANCHOR_TARGET_BLANK_NOOPENER_ISSUE_CODE: check_anchor_target_blank_noopener,
+    ANCHOR_TARGET_BLANK_NOREFERRER_ISSUE_CODE: check_anchor_target_blank_noreferrer,
     ANCHOR_HREF_TEMPLATE_ISSUE_CODE: check_anchor_href_template,
     DOCTYPE_ISSUE_CODE: check_html_doctype,
     CHARSET_ISSUE_CODE: check_html_charset,

@@ -85,18 +85,30 @@ def test_check_anchor_target_blank_missing_rel():
     """
 
     errors, jl_file = get_file(html)
-    result = check.check_anchor_target_blank(jl_file, {})
-    expected = [
+    result = set(
+        check.check_anchor_target_blank_noopener(jl_file, {})
+        + check.check_anchor_target_blank_noreferrer(jl_file, {})
+    )
+    expected = {
         issue.Issue(
             issue.IssueLocation(
                 file_path=None,
                 line=3,
                 column=8
             ),
-            check.ANCHOR_TARGET_BLANK_ISSUE_MESSAGE,
-            check.ANCHOR_TARGET_BLANK_ISSUE_CODE
+            check.ANCHOR_TARGET_BLANK_NOOPENER_ISSUE_MESSAGE,
+            check.ANCHOR_TARGET_BLANK_NOOPENER_ISSUE_CODE
+        ),
+        issue.Issue(
+            issue.IssueLocation(
+                file_path=None,
+                line=3,
+                column=8
+            ),
+            check.ANCHOR_TARGET_BLANK_NOREFERRER_ISSUE_MESSAGE,
+            check.ANCHOR_TARGET_BLANK_NOREFERRER_ISSUE_CODE
         )
-    ]
+    }
 
     assert result == expected
 
@@ -111,18 +123,21 @@ def test_check_anchor_target_blank_missing_noreferrer():
     """
 
     errors, jl_file = get_file(html)
-    result = check.check_anchor_target_blank(jl_file, {})
-    expected = [
+    result = set(
+        check.check_anchor_target_blank_noopener(jl_file, {})
+        + check.check_anchor_target_blank_noreferrer(jl_file, {})
+    )
+    expected = {
         issue.Issue(
             issue.IssueLocation(
                 file_path=None,
                 line=3,
                 column=8
             ),
-            check.ANCHOR_TARGET_BLANK_ISSUE_MESSAGE,
-            check.ANCHOR_TARGET_BLANK_ISSUE_CODE
+            check.ANCHOR_TARGET_BLANK_NOREFERRER_ISSUE_MESSAGE,
+            check.ANCHOR_TARGET_BLANK_NOREFERRER_ISSUE_CODE
         )
-    ]
+    }
 
     assert result == expected
 
@@ -137,18 +152,21 @@ def test_check_anchor_target_blank_missing_noopener():
     """
 
     errors, jl_file = get_file(html)
-    result = check.check_anchor_target_blank(jl_file, {})
-    expected = [
+    result = set(
+        check.check_anchor_target_blank_noopener(jl_file, {})
+        + check.check_anchor_target_blank_noreferrer(jl_file, {})
+    )
+    expected = {
         issue.Issue(
             issue.IssueLocation(
                 file_path=None,
                 line=3,
                 column=8
             ),
-            check.ANCHOR_TARGET_BLANK_ISSUE_MESSAGE,
-            check.ANCHOR_TARGET_BLANK_ISSUE_CODE
+            check.ANCHOR_TARGET_BLANK_NOOPENER_ISSUE_MESSAGE,
+            check.ANCHOR_TARGET_BLANK_NOOPENER_ISSUE_CODE
         )
-    ]
+    }
 
     assert result == expected
 
@@ -163,8 +181,11 @@ def test_check_anchor_target_blank_both_rel_present():
     """
 
     errors, jl_file = get_file(html)
-    result = check.check_anchor_target_blank(jl_file, {})
-    expected = []
+    result = set(
+        check.check_anchor_target_blank_noopener(jl_file, {})
+        + check.check_anchor_target_blank_noreferrer(jl_file, {})
+    )
+    expected = set()
 
     assert result == expected
 
@@ -179,8 +200,11 @@ def test_check_anchor_target_blank_missing_target_blank():
     """
 
     errors, jl_file = get_file(html)
-    result = check.check_anchor_target_blank(jl_file, {})
-    expected = []
+    result = set(
+        check.check_anchor_target_blank_noopener(jl_file, {})
+        + check.check_anchor_target_blank_noreferrer(jl_file, {})
+    )
+    expected = set()
 
     assert result == expected
 
@@ -195,8 +219,11 @@ def test_check_anchor_target_blank_url_for():
     """
 
     errors, jl_file = get_file(html)
-    result = check.check_anchor_target_blank(jl_file, {})
-    expected = []
+    result = set(
+        check.check_anchor_target_blank_noopener(jl_file, {})
+        + check.check_anchor_target_blank_noreferrer(jl_file, {})
+    )
+    expected = set()
 
     assert result == expected
 
